@@ -5,6 +5,11 @@ on:
     branches: ["**"]
   pull_request:
     branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
 
@@ -14,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -25,7 +30,8 @@ jobs:
         run: pip install flake8 black
 
       - name: Run flake8 (PEP8 style)
-        run: flake8 src/ --max-line-length=120 || true
+        run: flake8 src/ --max-line-length=120
+        # Remove "|| true" if you want lint to fail the build
 
       - name: Run black (check only)
         run: black --check src/
@@ -45,7 +51,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt pytest pytest-cov
 
       - name: Run pytest with coverage
         run: |
@@ -103,6 +109,9 @@ jobs:
             sleep 2
           done
 
+      - name: Install test dependencies
+        run: pip install -r requirements.txt pytest
+
       - name: Run integration tests
         run: pytest tests/integration/
 
@@ -129,7 +138,6 @@ jobs:
     name: Deploy to staging
     runs-on: ubuntu-latest
     needs: [integration-tests, security-scan]
-
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
 
     steps:
@@ -141,7 +149,6 @@ jobs:
     name: Deploy to production
     runs-on: ubuntu-latest
     needs: [integration-tests, security-scan]
-
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
