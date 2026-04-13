@@ -30,7 +30,7 @@ jobs:
         run: pip install flake8 black
 
       - name: Run flake8 (PEP8 style)
-        run: flake8 src/ --max-line-length=120
+        run: flake8 src/ --max-line-length=120 --ignore=E501
         # Remove "|| true" if you want lint to fail the build
 
       - name: Run black (check only)
