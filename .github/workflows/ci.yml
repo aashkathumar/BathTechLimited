@@ -1,6 +1,6 @@
 name: BathTech CI Pipeline
 
-on: [push, pull_request]
+on: push
 
 jobs:
   lint:
