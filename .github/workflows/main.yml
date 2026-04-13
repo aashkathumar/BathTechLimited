@@ -1,0 +1,149 @@
+name: BathTech CI/CD Pipeline
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+
+  # ── STAGE 1: Lint & Format ────────────────────────────────
+  lint:
+    name: Lint and format check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install lint tools
+        run: pip install flake8 black
+
+      - name: Run flake8 (PEP8 style)
+        run: flake8 src/ --max-line-length=120 || true
+
+      - name: Run black (check only)
+        run: black --check src/
+
+  # ── STAGE 2: Unit Tests ───────────────────────────────────
+  unit-tests:
+    name: Unit tests and coverage
+    runs-on: ubuntu-latest
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pytest with coverage
+        run: |
+          pytest tests/unit/ \
+            --cov=src \
+            --cov-report=xml \
+            --cov-fail-under=80
+
+      - name: Enforce 90% coverage on critical modules
+        run: |
+          pytest tests/unit/ \
+            --cov=src/sepsis_engine \
+            --cov=src/alert_logic \
+            --cov-fail-under=90
+
+  # ── STAGE 3: Build Docker Image ───────────────────────────
+  build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    needs: unit-tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}/sepsis-api:${{ github.sha }}
+
+  # ── STAGE 4: Integration Tests ────────────────────────────
+  integration-tests:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start services
+        run: docker compose -f docker-compose.test.yml up -d
+
+      - name: Wait for API
+        run: |
+          for i in {1..20}; do
+            curl -sf http://localhost:8000/health && break
+            sleep 2
+          done
+
+      - name: Run integration tests
+        run: pytest tests/integration/
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.test.yml down
+
+  # ── STAGE 5: Security Scan ────────────────────────────────
+  security-scan:
+    name: Trivy security scan
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Scan Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/sepsis-api:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+
+  # ── STAGE 6: Deploy to Staging ────────────────────────────
+  deploy-staging:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    needs: [integration-tests, security-scan]
+
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy (mock)
+        run: echo "Deploying to staging..."
+
+  # ── STAGE 7: Deploy to Production ─────────────────────────
+  deploy-production:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: [integration-tests, security-scan]
+
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy (mock)
+        run: echo "Deploying to production..."
