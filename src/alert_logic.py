@@ -1,6 +1,3 @@
-# BathTech Limited - Sepsis alert logic
-
-
 def check_sepsis(heart_rate: float, temperature: float) -> bool:
     """
     Returns True if patient vitals indicate possible sepsis.
