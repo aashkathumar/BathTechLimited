@@ -1,9 +1,6 @@
-def generate_alert(score):
+def check_sepsis(heart_rate: float, temperature: float) -> bool:
     """
-    Generates alert based on sepsis score.
+    Returns True if patient vitals indicate possible sepsis.
+    Criteria: heart rate > 90 bpm AND temperature > 38.3C
     """
-    if score >= 2:
-        return "HIGH RISK: Immediate attention required"
-    elif score == 1:
-        return "MEDIUM RISK: Monitor patient"
-    return "LOW RISK"
+    return heart_rate > 90 and temperature > 38.3   
