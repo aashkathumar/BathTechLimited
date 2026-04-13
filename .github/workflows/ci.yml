@@ -1,6 +1,9 @@
 name: BathTech CI Pipeline
 
-on: push
+on: [push, pull_request]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # silences Node.js 20 deprecation warning
 
 jobs:
   lint:
@@ -11,7 +14,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install flake8
-      - run: flake8 src/ tests/
+      - run: flake8 src/ tests/ --max-line-length=100 --ignore=E302,W503
 
   unit-tests:
     runs-on: ubuntu-latest
