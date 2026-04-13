@@ -14,5 +14,7 @@ def predict():
     is_sepsis = generate_alert(hr, temp)
     return jsonify({"sepsis_alert": is_sepsis})
 
+
+# <--- MUST HAVE TWO BLANK LINES HERE
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
