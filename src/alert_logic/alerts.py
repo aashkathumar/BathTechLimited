@@ -4,3 +4,4 @@ def generate_alert(heart_rate: float, temperature: float) -> bool:
     Criteria: heart rate > 90 bpm AND temperature > 38.3C
     """
     return heart_rate > 90 and temperature > 38.3
+# <--- Ensure there is a blank line here
