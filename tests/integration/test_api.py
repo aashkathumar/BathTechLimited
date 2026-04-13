@@ -11,3 +11,4 @@ def test_api_prediction_endpoint():
     response = requests.get("http://localhost:8080/predict")
     assert response.status_code == 200
     assert "sepsis_alert" in response.json()
+    
