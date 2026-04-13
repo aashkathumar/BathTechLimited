@@ -25,4 +25,5 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install pytest pytest-cov
+      - run: pip install -e .
       - run: pytest tests/unit/ --cov=src --cov-report=term-missing
